@@ -11,7 +11,7 @@ import requests
 
 images_path = "/Users/janeshmishra/Downloads/leaves/"
 ## Solr configuration.
-SOLR_ADDRESS = 'http://localhost:8983/solr/image/select?fl=id,image_path,score'
+SOLR_ADDRESS = 'http://localhost:8983/solr/image_cosine/select?fl=id,image_path,query_response,score'
 solr = pysolr.Solr(SOLR_ADDRESS, always_commit=True)
 
 
@@ -35,13 +35,13 @@ def generate_random_image():
 
 def find_similar_image(image_location):
     img2vec = Img2Vec(model='densenet')
-    img = Image.open(image_location)
+    img = Image.open(requests.get(image_location, stream=True).raw)
     vector = img2vec.get_vec(img).tolist()
     similar_image = []
 
     if vector is not None:
         header = {'Content-Type': 'application/json'}
-        knn = "{!knn f=vector topK=5}" + str(vector)
+        knn = "{!knn f=vector topK=6}" + str(vector)
         query = {"query": knn}
         query_response = json.loads(requests.post(url=SOLR_ADDRESS,
                                                     data=json.dumps(query),
@@ -59,5 +59,5 @@ def find_similar_image(image_location):
     print("Jai Mata Di")
 
 
-image = generate_random_image()
-find_similar_image(image)
+# image = generate_random_image()
+# find_similar_image(image)

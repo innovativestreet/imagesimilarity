@@ -5,40 +5,33 @@ import torch
 from image2vector.img_to_vec import Img2Vec
 import sys
 import pysolr
+import pandas as pd
+import requests
 
 ## Solr configuration.
 SOLR_ADDRESS = 'http://localhost:8983/solr/image_cosine'
 solr = pysolr.Solr(SOLR_ADDRESS, always_commit=True)
 
-images = os.listdir("/Users/janeshmishra/Downloads/dog-cat")
-images_path = "/Users/janeshmishra/Downloads/dog-cat/"
-
-# all_names = []
-# all_vecs = None
+df = pd.read_csv('/Users/janeshmishra/Downloads/images.csv')
 
 with torch.no_grad():
-    for i, file in enumerate(images):
+    for index, row in df.iterrows():
         try:
-            image_location = images_path + file
+            image_location = row['file_path']
+            query_response = row['reply_msg']
             img2vec = Img2Vec(model='densenet')
-            img = Image.open(image_location)
+            img = Image.open(requests.get(image_location, stream=True).raw)
             vec = img2vec.get_vec(img)
-            # if all_vecs is None:
-            #     all_vecs = vec
-            # else:
-            #     all_vecs = np.vstack([all_vecs, vec])
-            # all_names.append(file)
             vector = vec.tolist()
             doc = {
-                "id": str(i),
+                "id": str(index + 1),
                 "image_path": image_location,
-                "vector": vector
+                "vector": vector,
+                "query_response": query_response
             }
             solr.add(doc)
-            print(f"Image Path: {image_location} Done")
+            print(f"{index + 1} Image Path: {image_location} Done")
         except Exception as e:
-            print(f"Image Path: {image_location} Error: {str(e)}")
+            print(f"{index + 1} Image Path: {image_location} Error: {str(e)}")
             continue
 
-# np.save("all_vecs.npy", all_vecs)
-# np.save("all_names.npy", all_names)
