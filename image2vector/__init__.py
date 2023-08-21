@@ -1,0 +1,1 @@
+from image2vector.img_to_vec import Img2Vec
